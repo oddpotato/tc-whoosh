@@ -1,0 +1,1 @@
+call serverless deploy --stage %1 --verbose

@@ -1,0 +1,1 @@
+serverless invoke local --stage alpha --function %1

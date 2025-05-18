@@ -1,0 +1,27 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: sillyscavenger
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: tcwhoosh
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: tcwhoosh
+
+provider:
+  name: aws
+  runtime: python3.12
+
+package:
+  patterns:
+    - "!node_modules/**"
+    - "!utils/__pycache__/**"
+    - "!handlers/__pycache__/**"
+    - "!yml/**"
+    - "!.git/**"
+
+
+custom:
+  pythonRequirements:
+    dockerImage: public.ecr.aws/sam/build-python3.12:latest-x86_64 # It's weird I have to provide this
+    dockerizePip: non-linux
+
+functions:
+  - ${file(yml/functions/hello.yml)}

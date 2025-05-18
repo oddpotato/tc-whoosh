@@ -3,6 +3,17 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# venv
+/tcwhoosh
+
+# The most annoying file in the world
+__init__.py
+
+# Actual data that is fed into whoosh which I don't want to put on git 
+# right now even though it's dummy data
+/tcwhooshdataposts
+/data
+
 # C extensions
 *.so
 

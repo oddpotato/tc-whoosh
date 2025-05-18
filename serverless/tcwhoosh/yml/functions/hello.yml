@@ -1,0 +1,7 @@
+  hello:
+    handler: handlers/http/helloworld.hello
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
