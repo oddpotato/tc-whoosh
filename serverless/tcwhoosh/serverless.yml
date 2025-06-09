@@ -25,3 +25,4 @@ custom:
 
 functions:
   - ${file(yml/functions/hello.yml)}
+  - ${file(yml/functions/search.yml)}

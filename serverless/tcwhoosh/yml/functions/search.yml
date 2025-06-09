@@ -1,0 +1,7 @@
+  whooshsearch:
+    handler: handlers/http/whoosh.lookup
+    events:
+      - http:
+          path: search
+          method: post
+          cors: true
