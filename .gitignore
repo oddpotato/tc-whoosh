@@ -12,7 +12,9 @@ __init__.py
 # Actual data that is fed into whoosh which I don't want to put on git 
 # right now even though it's dummy data
 /tcwhooshdataposts
+/tcwhooshdatauserprofiles
 /data
+/scripts
 
 # C extensions
 *.so
