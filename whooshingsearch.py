@@ -14,6 +14,8 @@ userprofileSchema = Schema(name=TEXT(stored=True), userBio=TEXT(stored=True, ana
 from dataclasses import dataclass
 import argparse
 
+import simplejson as json
+
 @dataclass
 class SearchEngine:
 
@@ -32,18 +34,22 @@ class SearchEngine:
         from whoosh.qparser import QueryParser
         myindex = whoosh.index.open_dir("tcwhooshdataposts")
         qp = QueryParser(self.search_field, schema=postSchema)
-
         q = qp.parse(self.search_term)
         with myindex.searcher() as s:
-            results = s.search(q)
+            results = s.search(q, limit=None)
+            exactMatches = [x for x in results if self.search_term.lower() in x['postText'].lower()]
+            partialMatches = [x for x in results if x not in exactMatches]
             print(f"Search results for '{q}': {len(results)} found.")
+            print(f"Exact matches: {len(exactMatches)}, Partial matches: {len(partialMatches)}")
+            # print(len(exactMatches), "exact matches found.")
+            # print([x['postText'] for x in results])
+            # return True
             return [dict(result) for result in results]  # Convert results to a list of dictionaries
 
     def search_userprofile(self):
         from whoosh.qparser import QueryParser
         myindex = whoosh.index.open_dir("tcwhooshdatauserprofiles")
         qp = QueryParser(self.search_field, schema=userprofileSchema)
-
         q = qp.parse(self.search_term)
         with myindex.searcher() as s:
             results = s.search(q)

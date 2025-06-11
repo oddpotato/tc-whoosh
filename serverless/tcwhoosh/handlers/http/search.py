@@ -51,9 +51,9 @@ class SearchTC:
         q = qp.parse(self.search_term)
         with myindex.searcher() as s:
             try:
-                results = s.search(q)
+                results = s.search(q, limit=None)
                 print(f"Search results for '{q}': {len(results)} found.")
-                return self.response.standard({"success": True, "results": [dict(result) for result in results]}, "success")
+                return self.response.standard({"success": True, "results": self.filterResults(results)}, "success")
             except Exception as e:
                 print(f"Error during search: {e}")
                 return self.response.standard({"success": False, "message": str(e)}, "error")
@@ -65,12 +65,22 @@ class SearchTC:
         q = qp.parse(self.search_term)
         with myindex.searcher() as s:
             try:
-                results = s.search(q)
+                results = s.search(q, limit=None)
                 print(f"Search results for '{q}': {len(results)} found.")
-                return self.response.standard({"success": True, "results": [dict(result) for result in results]}, "success")
+                return self.response.standard({"success": True, "results": self.filterResults(results)}, "success")
             except Exception as e:
                 print(f"Error during search: {e}")
                 return self.response.standard({"success": False, "message": str(e)}, "error")
+
+    def filterResults(self, results):
+        allResults = [dict(result) for result in results]
+        exactMatches = [x for x in allResults if self.search_term.lower() in x[self.search_field].lower()]
+        partialMatches = [x for x in allResults if x not in exactMatches]
+        return {
+            "exactMatches": exactMatches,
+            "partialMatches": partialMatches,
+            "totalResultCount": len(results),
+        }
 
 searching = SearchTC()
 
