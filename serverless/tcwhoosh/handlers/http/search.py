@@ -1,5 +1,7 @@
 from utils import response
+import os
 
+import simplejson as json
 
 import whoosh
 from whoosh.fields import *
@@ -13,24 +15,29 @@ userprofileSchema = Schema(name=TEXT(stored=True), userBio=TEXT(stored=True, ana
                                  userlanguage=TEXT, userSlug=TEXT(stored=True, phrase=False),
                                  userCoverPic=ID, userProfilePic=ID, createdAt=NUMERIC(stored=True), trustLevel=TEXT(stored=True))
 
-class Whoosh:
+class SearchTC:
     def __init__(self):
         self.response = response.Response()
         self.entity = None
         self.search_term = None
         self.search_field = None
 
-    def search(self, event, context):
-        if not event.get("entity") or not event.get("search") or not event.get("field"):
+    def searchTC(self, event, context):
+        print(event['body'])
+        print(type(event['body']))
+        bodyContents = json.loads(event['body']) if isinstance(event['body'], str) else event['body']
+        if 'entity' not in bodyContents or 'search' not in bodyContents or 'field' not in bodyContents:
+            print("Missing required parameters in the request body.")
             return self.response.standard({"success": False, "message": "Missing required parameters: entity, search, field"}, "error")
-        if event["entity"] not in ["post", "userprofile"]:
+        if bodyContents["entity"] not in ["post", "userprofile"]:
             return self.response.standard({"success": False, "message": "Invalid entity type. Acceptable entries are 'post' or 'userprofile'."}, "error")
-        self.entity = event["entity"]
-        self.search_term = event["search"]
-        self.search_field = event["field"]
+        self.entity = bodyContents["entity"]
+        self.search_term = bodyContents["search"]
+        self.search_field = bodyContents["field"]
         return self.runQuery()
 
     def runQuery(self):
+        print(os.listdir("/mnt/efs"))
         entityFunction = f"search_{self.entity}"
         func = getattr(self, entityFunction, None)
         if func is None:
@@ -39,7 +46,7 @@ class Whoosh:
     
     def search_post(self):
         from whoosh.qparser import QueryParser
-        myindex = whoosh.index.open_dir("mtn/fs1/tcwhooshdataposts")
+        myindex = whoosh.index.open_dir("/mnt/efs/tcwhooshdataposts")
         qp = QueryParser('postText', schema=postSchema)
         q = qp.parse(self.search_term)
         with myindex.searcher() as s:
@@ -53,7 +60,7 @@ class Whoosh:
 
     def search_userprofile(self):
         from whoosh.qparser import QueryParser
-        myindex = whoosh.index.open_dir("/mtn/fs1/tcwhooshdatauserprofiles")
+        myindex = whoosh.index.open_dir("/mnt/efs/tcwhooshdatauserprofiles")
         qp = QueryParser(self.search_field, schema=userprofileSchema)
         q = qp.parse(self.search_term)
         with myindex.searcher() as s:
@@ -65,10 +72,11 @@ class Whoosh:
                 print(f"Error during search: {e}")
                 return self.response.standard({"success": False, "message": str(e)}, "error")
 
-searching = Whoosh()
+searching = SearchTC()
 
 def lookup(event, context):
-    return searching.search(event, context)
+    print(event)
+    return searching.searchTC(event, context)
 
 if __name__ == "__main__":
     event = {}

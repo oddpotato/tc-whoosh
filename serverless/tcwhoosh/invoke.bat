@@ -1,1 +1,1 @@
-serverless invoke local --stage alpha --function %1
+serverless invoke local --stage alpha --function %1 --path mocks/%2.json

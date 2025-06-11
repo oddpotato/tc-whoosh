@@ -1,5 +1,5 @@
   whooshsearch:
-    handler: handlers/http/whoosh.lookup
+    handler: handlers/http/search.lookup
     events:
       - http:
           path: search

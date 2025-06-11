@@ -5,9 +5,9 @@ app: tcwhoosh
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: tcwhoosh
 
-provider:
-  name: aws
-  runtime: python3.12
+# provider:
+#   name: aws
+#   runtime: python3.12
 
 package:
   patterns:
@@ -25,15 +25,18 @@ custom:
 
 provider:
   name: aws
-  environment: ${file(yml/env.yml):${opt:stage}}
+  # environment: ${file(yml/env.yml):${opt:stage}}
   runtime: python3.12
-  versionFunctions: false
-  lambdaHashingVersion: 20201221
-  stage: ${opt:stage, 'dev'}
+  # versionFunctions: false
+  # lambdaHashingVersion: 20201221
+  # stage: ${opt:stage, 'dev'}
   region: us-east-1
   iamRoleStatements: ${file(yml/iamRoleStatements.yml)}
 
 functions:
   - ${file(yml/functions/hello.yml)}
+  - ${file(yml/functions/goodbye.yml)}
   - ${file(yml/functions/search.yml)}
 
+plugins:
+  - serverless-python-requirements
