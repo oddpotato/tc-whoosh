@@ -1,7 +1,0 @@
-  goodbye:
-    handler: handlers/http/goodbyeworld.goodbye
-    events:
-      - http:
-          path: goodbye
-          method: get
-          cors: true
