@@ -1,0 +1,40 @@
+workflow:
+  name: 'Deployment pipeline for TCWHoosh: $CI_ENVIRONMENT_NAME'
+
+stages:
+  # - test
+  - deploy-tcwhoosh-main
+
+variables:
+  AWS_DEFAULT_REGION: us-east-1
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay
+
+deploy-tcwhoosh-main:
+  stage: deploy-tcwhoosh-main
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always  # Prevent pipeline run for push event
+    - when: on_success
+
+    # - when: always # Run pipeline for all other cases
+
+  environment: alpha
+  # environment: alpha
+  image: simonwts/wt.social-312:latest
+  # dependencies:
+  #   - test
+  before_script:
+    - echo environment
+    - node -v
+    - python3 -V
+    - pip --version
+    - pip install -r requirements.txt
+    # - pip show setuptools
+
+  script:
+    - npm config set prefix /usr/local
+    - npm install -g serverless
+    - npm ci
+    - serverless deploy --stage alpha --verbose
