@@ -23,6 +23,17 @@ custom:
     dockerImage: public.ecr.aws/sam/build-python3.12:latest-x86_64 # It's weird I have to provide this
     dockerizePip: non-linux
 
+provider:
+  name: aws
+  environment: ${file(yml/env.yml):${opt:stage}}
+  runtime: python3.12
+  versionFunctions: false
+  lambdaHashingVersion: 20201221
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  iamRoleStatements: ${file(yml/iamRoleStatements.yml)}
+
 functions:
   - ${file(yml/functions/hello.yml)}
   - ${file(yml/functions/search.yml)}
+

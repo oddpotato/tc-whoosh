@@ -1,0 +1,14 @@
+{
+  "name": "tcwhoosh",
+  "lockfileVersion": 3,
+  "requires": true,
+  "author": "Fin Apps",
+  "description": "It's the main serverless application to search TC.",
+  "license": "MIT License",
+  "packages": {},
+  "devDependencies": {
+    "dotenv": "^8.2.0",
+    "serverless-python-requirements": "^5.1.0",
+    "serverless-wsgi": "^1.7.8"
+  }
+}
