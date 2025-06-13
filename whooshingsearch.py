@@ -33,37 +33,54 @@ class SearchEngine:
     def search_post(self):
         from whoosh.qparser import QueryParser
         myindex = whoosh.index.open_dir("tcwhooshdataposts")
-        qp = QueryParser(self.search_field, schema=postSchema)
+        qp = QueryParser('postText', schema=postSchema)
         q = qp.parse(self.search_term)
         with myindex.searcher() as s:
             results = s.search(q, limit=None)
-            exactMatches = [x for x in results if self.search_term.lower() in x['postText'].lower()]
-            partialMatches = [x for x in results if x not in exactMatches]
-            print(f"Search results for '{q}': {len(results)} found.")
-            print(f"Exact matches: {len(exactMatches)}, Partial matches: {len(partialMatches)}")
-            # print(len(exactMatches), "exact matches found.")
-            # print([x['postText'] for x in results])
-            # return True
-            return [dict(result) for result in results]  # Convert results to a list of dictionaries
+            return self.filterResults(results, 'postText')  # Convert results to a list of dictionaries
 
     def search_userprofile(self):
         from whoosh.qparser import QueryParser
         myindex = whoosh.index.open_dir("tcwhooshdatauserprofiles")
-        qp = QueryParser(self.search_field, schema=userprofileSchema)
-        q = qp.parse(self.search_term)
+        names = {}
+        namequery = QueryParser('name', schema=userprofileSchema)
+        nameq = namequery.parse(self.search_term)
+        userBios = {}
+        userBioQuery = QueryParser('userBio', schema=userprofileSchema)
+        userbioq = userBioQuery.parse(self.search_term)
         with myindex.searcher() as s:
-            results = s.search(q)
-            print(f"Search results for '{q}': {len(results)} found.")
-            return [dict(result) for result in results]
+            nameresults = s.search(nameq)
+            names = self.filterResults(nameresults, 'name')
+            userBioResults = s.search(userbioq)
+            userBios = self.filterResults(userBioResults, 'userBio')
+            return {
+                "nameResults": names,
+                "userBioResults": userBios
+            }
+            # print(f"Search results for '{q}': {len(results)} found.")
+            # return [dict(result) for result in results]
+
+    def filterResults(self, results, field):
+        print(field)
+        allResults = [dict(result) for result in results]
+        print([x[field].lower() for x in allResults])
+        exactMatches = [x for x in allResults if self.search_term.lower() in x[field].lower()]
+        partialMatches = [x for x in allResults if x not in exactMatches]
+        return {
+            "exactMatches": exactMatches,
+            "partialMatches": partialMatches,
+            "totalResultCount": len(results),
+        }
 
 def main(entity: str, search: str, field: str):
     search_engine = SearchEngine(entity, search, field)
     results = search_engine.runQuery()
-    if results:
-        for result in results:
-            print(result)
-    else:
-        print("No results found.")
+    print(results)
+    # if results:
+    #     for result in results:
+    #         print(result)
+    # else:
+    #     print("No results found.")
         
 if __name__ == "__main__":
 
