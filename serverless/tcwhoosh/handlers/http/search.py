@@ -1,5 +1,4 @@
 from utils import response
-import os
 
 import simplejson as json
 
@@ -20,24 +19,21 @@ class SearchTC:
         self.response = response.Response()
         self.entity = None
         self.search_term = None
-        self.search_field = None
 
     def searchTC(self, event, context):
         print(event['body'])
-        print(type(event['body']))
+        # print(type(event['body']))
         bodyContents = json.loads(event['body']) if isinstance(event['body'], str) else event['body']
-        if 'entity' not in bodyContents or 'search' not in bodyContents or 'field' not in bodyContents:
+        if 'entity' not in bodyContents or 'search' not in bodyContents:
             print("Missing required parameters in the request body.")
-            return self.response.standard({"success": False, "message": "Missing required parameters: entity, search, field"}, "error")
+            return self.response.standard({"success": False, "message": "Missing required parameters: entity, search"}, "error")
         if bodyContents["entity"] not in ["post", "userprofile"]:
             return self.response.standard({"success": False, "message": "Invalid entity type. Acceptable entries are 'post' or 'userprofile'."}, "error")
         self.entity = bodyContents["entity"]
         self.search_term = bodyContents["search"]
-        self.search_field = bodyContents["field"]
         return self.runQuery()
 
     def runQuery(self):
-        print(os.listdir("/mnt/efs"))
         entityFunction = f"search_{self.entity}"
         func = getattr(self, entityFunction, None)
         if func is None:
@@ -53,28 +49,32 @@ class SearchTC:
             try:
                 results = s.search(q, limit=None)
                 print(f"Search results for '{q}': {len(results)} found.")
-                return self.response.standard({"success": True, "results": self.filterResults(results)}, "success")
+                return self.response.standard({"success": True, "results": self.filterResults(results, 'postText')}, "success")
             except Exception as e:
                 print(f"Error during search: {e}")
                 return self.response.standard({"success": False, "message": str(e)}, "error")
 
+    # 13/6/25 (Fin) - I'm bored on a train this entire function is 💅whatever💅
     def search_userprofile(self):
         from whoosh.qparser import QueryParser
         myindex = whoosh.index.open_dir("/mnt/efs/tcwhooshdatauserprofiles")
-        qp = QueryParser(self.search_field, schema=userprofileSchema)
-        q = qp.parse(self.search_term)
-        with myindex.searcher() as s:
-            try:
-                results = s.search(q, limit=None)
-                print(f"Search results for '{q}': {len(results)} found.")
-                return self.response.standard({"success": True, "results": self.filterResults(results)}, "success")
-            except Exception as e:
-                print(f"Error during search: {e}")
-                return self.response.standard({"success": False, "message": str(e)}, "error")
+        userprofileFields = ['name', 'userBio']
+        resultsToReturn = {}
+        for field in userprofileFields:
+            query = QueryParser(field, schema=userprofileSchema)
+            question = query.parse(self.search_term)
+            with myindex.searcher() as s:
+                try:
+                    results = s.search(question)
+                    resultsToReturn[field] = self.filterResults(results, field)
+                except Exception as e:
+                    print(f"Error during search: {e}")
+                    return self.response.standard({"success": False, "message": str(e)}, "error")
+        return self.response.standard({"success": True, "results": resultsToReturn}, "success")
 
-    def filterResults(self, results):
+    def filterResults(self, results, field):
         allResults = [dict(result) for result in results]
-        exactMatches = [x for x in allResults if self.search_term.lower() in x[self.search_field].lower()]
+        exactMatches = [x for x in allResults if self.search_term.lower() in x[field].lower()]
         partialMatches = [x for x in allResults if x not in exactMatches]
         return {
             "exactMatches": exactMatches,
