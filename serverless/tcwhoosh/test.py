@@ -31,6 +31,7 @@ def searchTC(entity, search):
     else:
         raise Exception(f"Error searching {entity} for {search}: {response.status_code} - {response.text}")
 
-searchTC('post', 'the trump administration')
-searchTC('userprofile', 'ducks rule')
-searchTC('userprofile', 'Fin Apps')
+# searchTC('post', 'the trump administration')
+# searchTC('userprofile', 'ducks rule')
+# searchTC('userprofile', 'Fin Apps')
+searchTC('branch', 'Music')

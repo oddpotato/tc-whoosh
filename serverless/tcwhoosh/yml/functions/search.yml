@@ -5,3 +5,12 @@
           path: search
           method: post
           cors: true
+
+  # whooshsearchbranchalpha:
+  #   handler: handlers/http/search.alphabranch
+  #   events:
+  #     - http:
+  #         path: searchalphabranch
+  #         method: post
+  #         cors: true
+

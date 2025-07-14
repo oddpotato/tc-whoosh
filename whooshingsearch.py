@@ -4,6 +4,7 @@ from whoosh.fields import *
 from whoosh.analysis import StemmingAnalyzer
 from whoosh.index import create_in, exists_in, open_dir
 
+branchSchema = Schema(colour=TEXT, icon=TEXT, description=TEXT(stored=True, analyzer=StemmingAnalyzer()), id=ID, summary=TEXT(stored=True, analyzer=StemmingAnalyzer()), slug=TEXT(stored=True), followers=NUMERIC, totalPosts=NUMERIC, tags=KEYWORD(stored=True), createdAt=NUMERIC(stored=True), label=TEXT(stored=True, analyzer=StemmingAnalyzer()))
 postSchema = Schema(postText=TEXT(stored=True, analyzer=StemmingAnalyzer()), 
                                  slug=ID(stored=True), author=TEXT(stored=True), authorSlug=TEXT(stored=True), 
                                  createdAt=NUMERIC(stored=True), parentslug=ID(stored=True), parentName=TEXT(stored=True))
@@ -29,7 +30,16 @@ class SearchEngine:
         if func is None:
             raise AttributeError("No such function exists - please check list of acceptable entries in the help section")
         return func()
-    
+
+    def search_branch(self):
+        from whoosh.qparser import QueryParser
+        myindex = whoosh.index.open_dir("tcwhooshdatabranchs")
+        qp = QueryParser('description', schema=branchSchema)
+        q = qp.parse(self.search_term)
+        with myindex.searcher() as s:
+            results = s.search(q, limit=None)
+            return self.filterResults(results, 'description')  # Convert results to a list of dictionaries
+
     def search_post(self):
         from whoosh.qparser import QueryParser
         myindex = whoosh.index.open_dir("tcwhooshdataposts")
@@ -86,7 +96,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Whoosh Search")
     parser.add_argument('-e', '--entity', 
-                        type=str, choices=['post', 'userprofile'], required=True, help='Entity to index (post or userprofile)')
+                        type=str, choices=['post', 'userprofile', 'branch'], required=True, help='Entity to index (post or userprofile)')
     parser.add_argument('-s', '--search', 
                         type=str, default='A wild ñ', 
                         help='Search term to query the index')

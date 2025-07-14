@@ -12,14 +12,19 @@ with open("./data/posts.json", "r", encoding='utf-8') as f:
 with open ("./data/userprofiles.json", "r") as g:
     userprofileData = json.load(g)
 
+with open ("./data/branches.json", "r", encoding='utf-8') as g:
+    branchData = json.load(g)
+
 class CreateTCWhooshData:
     def __init__(self, entity):
         # It's not a class if it doesn't start with boop
         self.boop = "boop"
         self.entity = entity
         # Data and schema
+        self.branchData = branchData
         self.postData = data
         self.userprofileData = userprofileData
+        self.branchSchema = Schema(colour=TEXT, icon=TEXT, description=TEXT(stored=True, analyzer=StemmingAnalyzer()), id=ID, summary=TEXT(stored=True, analyzer=StemmingAnalyzer()), slug=TEXT(stored=True), followers=NUMERIC, totalPosts=NUMERIC, tags=KEYWORD(stored=True), createdAt=NUMERIC(stored=True), label=TEXT(stored=True, analyzer=StemmingAnalyzer()))
         self.postSchema = Schema(postText=TEXT(stored=True, analyzer=StemmingAnalyzer()), 
                                  slug=ID(stored=True), author=TEXT(stored=True), authorSlug=TEXT(stored=True), 
                                  createdAt=NUMERIC(stored=True), parentslug=ID(stored=True), parentName=TEXT(stored=True))
@@ -49,6 +54,30 @@ class CreateTCWhooshData:
         except Exception as e:
             print(f"An error occurred while running {entityFunction}: {e}")
             raise e
+
+    def create_index_branch(self):
+        # Create an index in the directory "tcwhooshdata" with the schema defined above
+        writer = self.binaryData.writer()
+        for branch in self.branchData:
+            # Add each post to the index
+            writer.add_document(
+                colour=branch["colour"],
+                icon=branch["icon"],
+                description=branch["description"],
+                id=branch["id"],
+                summary=branch["summary"],
+                createdAt=branch["createdAt"] / 1000,
+                slug=branch['slug'],
+                followers=branch['statistics']['totalFollowers'],
+                totalPosts=branch['statistics']['totalPosts'],
+                tags= ' '.join(branch['tags']),
+                label=branch['label']
+            )
+        
+        writer.commit() 
+        print("Index created successfully in tcwhooshdata directory")
+
+        # colour=TEXT, icon=TEXT, description=TEXT(stored=True, analyzer=StemmingAnalyzer), id=ID, summary=TEXT(stored=True, analyzer=StemmingAnalyzer), slug=TEXT(stored=True), followers=NUMERIC, totalPosts=NUMERIC, tags=KEYWORD(stored=True), createdAt=NUMERIC(stored=True)
 
     def create_index_post(self):
         # Create an index in the directory "tcwhooshdata" with the schema defined above
@@ -110,7 +139,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Whoosh Indexing and Searching")
     parser.add_argument('-e', '--entity', 
-                        type=str, choices=['post', 'userprofile'], required=True, help='Entity to index (post or userprofile)')
+                        type=str, choices=['post', 'userprofile', 'branch'], required=True, help='Entity to index (post or userprofile)')
     parser.add_argument('-s', '--search', 
                         type=str, default='A wild ñ', 
                         help='Search term to query the index')

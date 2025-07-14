@@ -7,6 +7,7 @@ from whoosh.fields import *
 from whoosh.analysis import StemmingAnalyzer
 from whoosh.index import exists_in, open_dir
 
+branchSchema = Schema(colour=TEXT, icon=TEXT, description=TEXT(stored=True, analyzer=StemmingAnalyzer()), id=ID, summary=TEXT(stored=True, analyzer=StemmingAnalyzer()), slug=TEXT(stored=True), followers=NUMERIC, totalPosts=NUMERIC, tags=KEYWORD(stored=True), createdAt=NUMERIC(stored=True), label=TEXT(stored=True, analyzer=StemmingAnalyzer()))
 postSchema = Schema(postText=TEXT(stored=True, analyzer=StemmingAnalyzer()), 
                                  slug=ID(stored=True), author=TEXT(stored=True), authorSlug=TEXT(stored=True), 
                                  createdAt=NUMERIC(stored=True), parentslug=ID(stored=True), parentName=TEXT(stored=True))
@@ -27,8 +28,8 @@ class SearchTC:
         if 'entity' not in bodyContents or 'search' not in bodyContents:
             print("Missing required parameters in the request body.")
             return self.response.standard({"success": False, "message": "Missing required parameters: entity, search"}, "error")
-        if bodyContents["entity"] not in ["post", "userprofile"]:
-            return self.response.standard({"success": False, "message": "Invalid entity type. Acceptable entries are 'post' or 'userprofile'."}, "error")
+        if bodyContents["entity"] not in ["post", "userprofile", "branch"]:
+            return self.response.standard({"success": False, "message": "Invalid entity type. Acceptable entries are 'post', 'userprofile', or 'branch'."}, "error")
         self.entity = bodyContents["entity"]
         self.search_term = bodyContents["search"]
         return self.runQuery()
@@ -40,6 +41,20 @@ class SearchTC:
             raise AttributeError("No such function exists - please check list of acceptable entries in the help section")
         return func()
     
+    def search_branch(self):
+        from whoosh.qparser import QueryParser
+        myindex = whoosh.index.open_dir("/mnt/efs/tcwhooshdatabranchs")
+        qp = QueryParser('description', schema=branchSchema)
+        q = qp.parse(self.search_term)
+        with myindex.searcher() as s:
+            try:
+                results = s.search(q, limit=None)
+                return self.response.standard({"success": True, "results": self.filterResults(results, 'description')}, "success")
+                # return self.filterResults(results, 'description')  # Convert results to a list of dictionaries
+            except Exception as e:
+                print(f"Error during search: {e}")
+                return self.response.standard({"success": False, "message": str(e)}, "error")
+
     def search_post(self):
         from whoosh.qparser import QueryParser
         myindex = whoosh.index.open_dir("/mnt/efs/tcwhooshdataposts")
@@ -87,6 +102,10 @@ searching = SearchTC()
 def lookup(event, context):
     print(event)
     return searching.searchTC(event, context)
+
+# def alphabranch(event, context):
+#     print(event)
+#     return searching.searchTC(event, context)
 
 if __name__ == "__main__":
     event = {}
